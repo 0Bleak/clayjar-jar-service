@@ -40,7 +40,7 @@ type JarAttributes struct {
 DTOs Request model
 */
 
-type CreateJarRequest struct {
+type CreateJarRequest struct { // This is a data transfer object & is used to obtain data from outside the system
 	Name        string        `json:"name"`
 	Description string        `json:"description"`
 	Category    string        `json:"category"`
@@ -54,7 +54,7 @@ type CreateJarRequest struct {
 Validation
 */
 
-func (j *Jar) Validate() error {
+func (j *Jar) Validate() error { //Error validation checks if the attributes of the Jar are correct and logical
 	switch {
 	case j.Name == "":
 		return errors.New("Name attribute is mandatory")
@@ -76,7 +76,7 @@ func (j *Jar) Validate() error {
 Lifecycle Hooks
 */
 
-func (j *Jar) PrepareForCreate() {
+func (j *Jar) PrepareForCreate() { //Assigns a new unique ID to a newly created Jar & gives current time to created_at and updated_at
 	if j.ID.IsZero() {
 		j.ID = primitive.NewObjectID()
 	}
@@ -85,17 +85,17 @@ func (j *Jar) PrepareForCreate() {
 	j.UpdatedAt = now
 }
 
-func (j *Jar) PrepareForUpdate() {
+func (j *Jar) PrepareForUpdate() { //Used to update updated_at when updating a jar
 	j.UpdatedAt = time.Now().UTC()
 }
 
 /*
-Domain Events
+Domain Events : will be used by kafka for the event driven design
 */
 
 type JarEvent struct {
-	Type      string    `json:"type"`
-	JarID     string    `json:"jar_id"`
-	Payload   *Jar      `json:"payload,omitempty"`
-	Timestamp time.Time `json:"timestamp"`
+	Type      string    `json:"type"`              //type of the change
+	JarID     string    `json:"jar_id"`            //ID of the jar that changed
+	Payload   *Jar      `json:"payload,omitempty"` //Any useful information abt the jar in question
+	Timestamp time.Time `json:"timestamp"`         //What time exactly did this change fire
 }
