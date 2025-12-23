@@ -16,15 +16,17 @@ type Config struct {
 
 func LoadConfig() (*Config, error) {
 	cfg := &Config{
-		ServerPort:   getEnv("SERVER_PORT", "8080"),
-		MongoURI:     getEnv("MONGO_URI", "mongodb://localhost:27017"),
-		MongoDB:      getEnv("MONGO_DB", "clayjar"),
-		KafkaBrokers: parseKafkaBrokers(getEnv("KAFKA_BROKERS", "localhost:9092")),
-		KafkaTopic:   getEnv("KAFKA_TOPIC", "jar-events"),
+		ServerPort:   mustGetEnv("SERVER_PORT"),
+		MongoURI:     mustGetEnv("MONGO_URI"),
+		MongoDB:      mustGetEnv("MONGO_DB"),
+		KafkaBrokers: parseKafkaBrokers(mustGetEnv("KAFKA_BROKERS")),
+		KafkaTopic:   mustGetEnv("KAFKA_TOPIC"),
 	}
+
 	if err := cfg.Validate(); err != nil {
 		return nil, err
 	}
+
 	return cfg, nil
 }
 
@@ -47,11 +49,13 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
+// mustGetEnv retrieves an environment variable or panics if not found
+func mustGetEnv(key string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		panic(fmt.Sprintf("Required environment variable %s is not set", key))
 	}
-	return defaultValue
+	return value
 }
 
 func parseKafkaBrokers(brokers string) []string {
