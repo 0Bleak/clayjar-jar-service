@@ -1,28 +1,4 @@
 services:
-  kafka:
-    image: apache/kafka:4.1.1
-    container_name: kafka-jar-service
-    ports:
-      - "9092:9092"
-    environment:
-      KAFKA_CLUSTER_ID: "JYBMCjxoT9yrH_xj2_WHFw"
-      KAFKA_NODE_ID: 1
-      KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
-      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LOG_DIRS: /var/lib/kafka/data
-    volumes:
-      - kafka-data:/var/lib/kafka/data
-    networks:
-      - jar-network
-    healthcheck:
-      test: /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092
-      interval: 10s
-      timeout: 10s
-      retries: 5
-
   mongo:
     image: mongo:7.0
     container_name: mongo-jar-service
@@ -37,6 +13,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   jar-service:
     build:
@@ -50,15 +27,14 @@ services:
       SERVER_PORT: 8080
       MONGO_URI: mongodb://mongo:27017
       MONGO_DB: clayjar
-      KAFKA_BROKERS: kafka:9092
+      KAFKA_BROKERS: shared-kafka:9092
       KAFKA_TOPIC: jar-events
     depends_on:
-      kafka:
-        condition: service_healthy
       mongo:
         condition: service_healthy
     networks:
       - jar-network
+      - shared-kafka-network
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 10s
@@ -68,7 +44,9 @@ services:
 networks:
   jar-network:
     driver: bridge
+  shared-kafka-network:
+    external: true
+    name: shared-kafka-network
 
 volumes:
-  kafka-data:
   mongo-data:
